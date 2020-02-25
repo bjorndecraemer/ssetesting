@@ -1,34 +1,51 @@
 package com.bjornspetprojects.ssetesting.controllers;
 
-import com.bjornspetprojects.ssetesting.services.SseStateService;
+import com.bjornspetprojects.ssetesting.HeaterState;
+import com.bjornspetprojects.ssetesting.services.EventEmitterStateService;
+import com.bjornspetprojects.ssetesting.services.HeaterStateService;
+import io.netty.util.internal.ThreadLocalRandom;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.CrossOrigin;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
+import org.springframework.http.codec.ServerSentEvent;
+import org.springframework.web.bind.annotation.*;
+import reactor.core.publisher.Flux;
+import reactor.util.function.Tuples;
+
+import java.time.Duration;
 
 
 @CrossOrigin(origins = "http://localhost:4200")
-@Controller
+@RestController
 public class MyController {
 
 
-    private final SseStateService sseStateService;
+    private final EventEmitterStateService eventEmitterStateService;
+    private final HeaterStateService heaterStateService;
 
-    public MyController(SseStateService sseStateService) {
-        this.sseStateService = sseStateService;
+    public MyController(EventEmitterStateService eventEmitterStateService, HeaterStateService heaterStateService) {
+        this.eventEmitterStateService = eventEmitterStateService;
+        this.heaterStateService = heaterStateService;
     }
 
-    @GetMapping("/sse")
-    public SseEmitter getEmitter(){
-        return sseStateService.getSseEmitter();
+    @GetMapping(value = "/sse", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    public Flux<ServerSentEvent<HeaterState>> getEmitter(){
+        return eventEmitterStateService.subscribe();
     }
 
-    @PostMapping("/message")
-    public ResponseEntity<Void> addMessage(@RequestParam String value){
-        sseStateService.pushString(value);
+    @PostMapping("/currenttemp")
+    public ResponseEntity<Void> currentTemp(@RequestParam Integer value){
+        heaterStateService.setCurrentTemp(value);
+        return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/requestedtemp")
+    public ResponseEntity<Void> requestedTemp(@RequestParam Integer value){
+        heaterStateService.setRequestedTemp(value);
+        return ResponseEntity.ok().build();
+    }
+    @PostMapping("/auto")
+    public ResponseEntity<Void> auto(@RequestParam Boolean value){
+        heaterStateService.setAuto(value);
         return ResponseEntity.ok().build();
     }
 }
