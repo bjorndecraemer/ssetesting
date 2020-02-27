@@ -3,18 +3,13 @@ package com.bjornspetprojects.ssetesting.controllers;
 import com.bjornspetprojects.ssetesting.HeaterState;
 import com.bjornspetprojects.ssetesting.services.EventEmitterStateService;
 import com.bjornspetprojects.ssetesting.services.HeaterStateService;
-import io.netty.util.internal.ThreadLocalRandom;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.codec.ServerSentEvent;
 import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Flux;
-import reactor.util.function.Tuples;
 
-import java.time.Duration;
-
-
-@CrossOrigin(origins = "http://localhost:4200")
+@CrossOrigin(origins = "*", exposedHeaders = "Access-Control-Allow-Origin")
 @RestController
 public class MyController {
 
@@ -29,7 +24,7 @@ public class MyController {
 
     @GetMapping(value = "/sse", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public Flux<ServerSentEvent<HeaterState>> getEmitter(){
-        return eventEmitterStateService.subscribe();
+        return eventEmitterStateService.getFluxFromHeaterStateReplayProcessor();
     }
 
     @PostMapping("/currenttemp")
@@ -48,4 +43,14 @@ public class MyController {
         heaterStateService.setAuto(value);
         return ResponseEntity.ok().build();
     }
+
+//    @GetMapping(path = "/sseredone", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+//    public Flux<ServerSentEvent<Object>> fetchSse(){
+//        return Flux.create(sink -> {
+//            final TopicEventHandler handler = event -> sink.next(ServerSentEvent.builder()
+//                    .event(event.getType())
+//                    .data(event.getData())
+//                    .build());
+//        })
+//    }
 }
